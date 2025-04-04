@@ -1,6 +1,7 @@
 <div>
   <ng-container *ngIf="account$ | async as account; else connectWalletSection">
     <p>Connected Wallet: {{ account | slice: 0 : 6 }}...{{ account | slice: -4 }}</p>
+    <button (click)="disconnectWallet()">Disconnect Wallet</button>
   </ng-container>
   <ng-template #connectWalletSection>
     <button (click)="connectWallet()">Connect Wallet</button>

@@ -36,12 +36,10 @@ export class EthereumService {
       this.provider = new ethers.providers.Web3Provider(window.ethereum);
       this.providerSubject.next(this.provider);
 
-      // Listen for account changes
       window.ethereum.on('accountsChanged', (accounts: string[]) => {
         this.accountSubject.next(accounts[0] || null);
       });
 
-      // Initial connection attempt
       this.connectWallet().subscribe();
     } else {
       console.error('MetaMask is not installed');
@@ -70,5 +68,10 @@ export class EthereumService {
         return throwError(() => new Error(`Failed to connect wallet: ${error.message}`));
       })
     );
+  }
+
+  disconnectWallet(): void {
+    this.accountSubject.next(null);
+    this.signer = null;
   }
 }
