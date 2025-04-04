@@ -4,7 +4,9 @@ import { catchError, finalize, Observable, Subject, takeUntil } from 'rxjs';
 import { EthereumService } from '../../services/ethereum.service';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { LlmService } from '../../services/llm.service';
-
+import { TOKENS } from '../../models/tokens';
+import { ethers } from 'ethers';
+import { toReadableAmount } from '../../libs/conversion';
 @Component({
   selector: 'app-swap',
   imports: [CommonModule, ReactiveFormsModule],
@@ -21,8 +23,11 @@ export class SwapComponent implements OnInit, OnDestroy {
   parsedInstruction: any = null;
   tokenInSymbol: any = null;
   tokenOutSymbol: any = null;
-  amountIn: any = null;
+  amountOut: any = null;
   poolAddress: any = null;
+  poolContract: any = null;
+  quoterContract: any = null;
+  quotedAmountIn: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -63,7 +68,7 @@ export class SwapComponent implements OnInit, OnDestroy {
     this.parsedInstruction = null;
     this.tokenInSymbol = null;
     this.tokenOutSymbol = null;
-    this.amountIn = null;
+    this.amountOut = null;
     const instruction = this.swapForm.get('instruction')?.value;
 
     this.llmService
@@ -98,7 +103,7 @@ export class SwapComponent implements OnInit, OnDestroy {
             this.tokenOutSymbol = parsed.using;
           }
 
-          this.amountIn = parsed.amount;
+          this.amountOut = parsed.amount;
         },
       });
   }
@@ -107,11 +112,11 @@ export class SwapComponent implements OnInit, OnDestroy {
     this.swapForm.get('instruction')?.setValue('Buy 5 USDC using WETH');
   }
 
-  async getUniswapPool() {
+  async getUniswapPoolAddress() {
     try {
       this.isLoading = true;
       this.error = null;
-      this.poolAddress = await this.ethereumService.getUniswapPool(
+      this.poolAddress = await this.ethereumService.getUniswapPoolAddress(
         this.tokenInSymbol,
         this.tokenOutSymbol
       );
@@ -119,6 +124,54 @@ export class SwapComponent implements OnInit, OnDestroy {
     } catch (error: any) {
       console.error('Error getting pool:', error);
       this.error = error.message || 'Failed to get pool address';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async getUniswapPoolContract() {
+    try {
+      this.poolContract = await this.ethereumService.getUniswapPoolData(this.poolAddress);
+    } catch (error: any) {
+      console.error('Error getting pool contract:', error);
+      this.error = error.message || 'Failed to get pool contract';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async getQuoterContract() {
+    try {
+      this.quoterContract = await this.ethereumService.getQuoterContract();
+    } catch (error: any) {
+      console.error('Error getting quoter contract:', error);
+      this.error = error.message || 'Failed to get quoter contract';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async getQuotedAmountIn() {
+    try {
+      console.log('*quotedAmountIn*');
+      console.log('this.tokenInSymbol: ', this.tokenInSymbol);
+      console.log('this.tokenOutSymbol: ', this.tokenOutSymbol);
+      console.log('this.amountOut: ', this.amountOut);
+
+      this.quotedAmountIn = await this.ethereumService.getQuotedAmountIn(
+        this.quoterContract,
+        this.tokenInSymbol,
+        this.tokenOutSymbol,
+        this.amountOut
+      );
+      console.log('this.quotedAmountIn: ', this.quotedAmountIn);
+
+      const formattedQuotedAmountIn = ethers.utils.formatUnits(this.quotedAmountIn, TOKENS[this.tokenInSymbol].decimals)
+      console.log('here formattedQuotedAmountIn: ', formattedQuotedAmountIn);
+      
+    } catch (error: any) {
+      console.error('Error getting quoted amount in:', error);
+      this.error = error.message || 'Failed to get quoted amount in';
     } finally {
       this.isLoading = false;
     }

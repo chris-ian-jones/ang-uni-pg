@@ -6,6 +6,9 @@ import { Token } from '@uniswap/sdk-core';
 import { TOKEN_DATA, TOKENS } from './../models/tokens';
 import { FeeAmount } from '@uniswap/v3-sdk';
 import { Pool, Route, computePoolAddress, SwapRouter, SwapQuoter } from '@uniswap/v3-sdk';
+import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
+import Quoter from '@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json';
+import { fromReadableAmount, toReadableAmount } from '../libs/conversion';
 
 declare global {
   interface Window {
@@ -24,6 +27,11 @@ export class EthereumService {
   private accountSubject = new BehaviorSubject<string | null>(null);
   public account$ = this.accountSubject.asObservable();
   private readonly POOL_FACTORY_CONTRACT_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
+  private readonly QUOTER_CONTRACT_ADDRESS = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
+
+  private token0: any = null;
+  private token1: any = null;
+  private fee: any = null;
 
   private signer: ethers.Signer | null = null;
 
@@ -80,12 +88,81 @@ export class EthereumService {
     this.signer = null;
   }
 
-  async getUniswapPool(tokenInSymbol: string, tokenOutSymbol: string): Promise<any> {
+  async getUniswapPoolAddress(tokenInSymbol: string, tokenOutSymbol: string): Promise<any> {
     return computePoolAddress({
       factoryAddress: this.POOL_FACTORY_CONTRACT_ADDRESS,
       tokenA: TOKENS[tokenInSymbol],
       tokenB: TOKENS[tokenOutSymbol],
       fee: FeeAmount.MEDIUM,
     });
+  }
+
+  async getUniswapPoolData(poolAddress: string): Promise<any> {
+    const poolContract = new ethers.Contract(
+      poolAddress,
+      IUniswapV3PoolABI.abi,
+      this.infuraProvider
+    );
+
+    const [token0, token1, fee, liquidity, slot0] = await Promise.all([
+      poolContract['token0'](),
+      poolContract['token1'](),
+      poolContract['fee'](),
+      poolContract['liquidity'](),
+      poolContract['slot0'](),
+    ]);
+
+    console.log('poolContract', poolContract);
+    console.log('token0', token0);
+    this.token0 = token0;
+    console.log('token1', token1);
+    this.token1 = token1;
+    console.log('fee', fee);
+    this.fee = fee;
+    console.log('liquidity', liquidity);
+    console.log('slot0', slot0);
+
+    return poolContract;
+  }
+
+  async getQuoterContract(): Promise<any> {
+    const quoterContract = new ethers.Contract(
+      this.QUOTER_CONTRACT_ADDRESS,
+      Quoter.abi,
+      this.infuraProvider
+    );
+
+    console.log('quoterContract', quoterContract);
+
+    return quoterContract;
+  }
+
+  async getQuotedAmountIn(
+    quoterContract: any,
+    tokenInSymbol: string,
+    tokenOutSymbol: string,
+    amountOut: number
+  ): Promise<any> {
+    console.log(
+      'fromReadableAmount(amountOut, TOKENS[tokenOutSymbol].decimals)',
+      fromReadableAmount(amountOut, TOKENS[tokenOutSymbol].decimals)
+    );
+
+    console.log('here')
+    console.log('this.token0', this.token0);
+    console.log('this.token1', this.token1);
+    
+
+    const quotedAmountIn = await quoterContract.callStatic.quoteExactOutputSingle(
+      this.token1, // tokenIn
+      this.token0, // tokenOut
+      this.fee, // fee
+      fromReadableAmount(amountOut, TOKENS[tokenOutSymbol].decimals).toString(), // amountOut
+      0
+    );
+
+    console.log('quotedAmountIn', quotedAmountIn);
+
+    return quotedAmountIn;
   }
 }

@@ -24,6 +24,18 @@
   <p>Amount: {{ parsedInstruction.amount }} {{ parsedInstruction.token }}</p>
   <p>Using: {{ parsedInstruction.using }}</p>
 
-  <button (click)="getUniswapPool()" [disabled]="isLoading">Get Uniswap Pool</button>
-  <p *ngIf="poolAddress">Pool Address: {{ poolAddress }}</p>
+  <button (click)="getUniswapPoolAddress()" [disabled]="isLoading">Get Uniswap Pool Address</button>
+  <ng-container *ngIf="poolAddress">
+    <p>Pool Address: {{ poolAddress }}</p>
+    <button (click)="getUniswapPoolContract()" [disabled]="isLoading">
+      Get Uniswap Pool Contract
+    </button>
+  </ng-container>
+  <ng-container *ngIf="poolContract">
+    <button (click)="getQuoterContract()" [disabled]="isLoading">Get Quoter Contract</button>
+  </ng-container>
+  <ng-container *ngIf="quoterContract">
+    <button (click)="getQuotedAmountIn()" [disabled]="isLoading">Get Quoter Amount In</button>
+    <p *ngIf="quotedAmountIn">Quoted Amount In: {{ quotedAmountIn }}</p>
+  </ng-container>
 </div>
