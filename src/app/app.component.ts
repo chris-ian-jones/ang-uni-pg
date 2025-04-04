@@ -1,9 +1,8 @@
 import { Component } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { SwapComponent } from './components/swap/swap.component';
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, SwapComponent],
+  imports: [SwapComponent],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss',
 })

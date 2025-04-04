@@ -33,7 +33,26 @@
               }
             ],
             "styles": ["src/styles.scss"],
-            "scripts": []
+            "scripts": [],
+            "allowedCommonJsDependencies": [
+              "@ethersproject/bignumber",
+              "@ethersproject/json-wallets",
+              "@ethersproject/keccak256",
+              "@ethersproject/sha2",
+              "@ethersproject/providers",
+              "@uniswap/sdk-core",
+              "@uniswap/v3-sdk",
+              "bn.js",
+              "hash.js",
+              "decimal.js-light",
+              "js-sha3",
+              "jsbi",
+              "toformat",
+              "aes-js",
+              "scrypt-js",
+              "bech32",
+              "big.js"
+            ]
           },
           "configurations": {
             "production": {
