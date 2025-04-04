@@ -7,7 +7,6 @@ import { LlmService } from '../../services/llm.service';
 
 @Component({
   selector: 'app-swap',
-  standalone: true,
   imports: [CommonModule, ReactiveFormsModule],
   providers: [EthereumService, LlmService],
   templateUrl: './swap.component.html',

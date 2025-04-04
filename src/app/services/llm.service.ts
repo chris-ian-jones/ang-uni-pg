@@ -28,6 +28,7 @@ export class LlmService {
     if (!environment.huggingFaceApiKey) {
       console.error('Hugging Face API key not found in environment variables');
     }
+    console.log('Hugging Face API key:', environment.huggingFaceApiKey);
     this.hf = new HfInference(environment.huggingFaceApiKey);
   }
 
