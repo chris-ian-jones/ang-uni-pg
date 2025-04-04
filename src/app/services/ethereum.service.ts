@@ -7,7 +7,6 @@ import { TOKEN_DATA, TOKENS } from './../models/tokens';
 import { FeeAmount } from '@uniswap/v3-sdk';
 import { Pool, Route, computePoolAddress, SwapRouter, SwapQuoter } from '@uniswap/v3-sdk';
 
-
 declare global {
   interface Window {
     ethereum: any;
@@ -83,10 +82,10 @@ export class EthereumService {
 
   async getUniswapPool(tokenInSymbol: string, tokenOutSymbol: string): Promise<any> {
     return computePoolAddress({
-        factoryAddress: this.POOL_FACTORY_CONTRACT_ADDRESS,
-        tokenA: TOKENS[tokenInSymbol],
-        tokenB: TOKENS[tokenOutSymbol],
-        fee: FeeAmount.MEDIUM,
-      })
+      factoryAddress: this.POOL_FACTORY_CONTRACT_ADDRESS,
+      tokenA: TOKENS[tokenInSymbol],
+      tokenB: TOKENS[tokenOutSymbol],
+      fee: FeeAmount.MEDIUM,
+    });
   }
 }

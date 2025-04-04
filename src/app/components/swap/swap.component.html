@@ -20,10 +20,10 @@
 
 <div *ngIf="parsedInstruction">
   <h3>Parsed Trade Details:</h3>
-  <p>Action: {{parsedInstruction.action}}</p>
-  <p>Amount: {{parsedInstruction.amount}} {{parsedInstruction.token}}</p>
-  <p>Using: {{parsedInstruction.using}}</p>
+  <p>Action: {{ parsedInstruction.action }}</p>
+  <p>Amount: {{ parsedInstruction.amount }} {{ parsedInstruction.token }}</p>
+  <p>Using: {{ parsedInstruction.using }}</p>
 
   <button (click)="getUniswapPool()" [disabled]="isLoading">Get Uniswap Pool</button>
-  <p *ngIf="poolAddress">Pool Address: {{poolAddress}}</p>
+  <p *ngIf="poolAddress">Pool Address: {{ poolAddress }}</p>
 </div>

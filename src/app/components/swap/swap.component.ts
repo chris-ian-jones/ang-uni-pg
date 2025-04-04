@@ -112,7 +112,10 @@ export class SwapComponent implements OnInit, OnDestroy {
     try {
       this.isLoading = true;
       this.error = null;
-      this.poolAddress = await this.ethereumService.getUniswapPool(this.tokenInSymbol, this.tokenOutSymbol);
+      this.poolAddress = await this.ethereumService.getUniswapPool(
+        this.tokenInSymbol,
+        this.tokenOutSymbol
+      );
       console.log('Pool address:', this.poolAddress);
     } catch (error: any) {
       console.error('Error getting pool:', error);
