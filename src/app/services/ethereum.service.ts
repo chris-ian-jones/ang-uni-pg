@@ -2,6 +2,11 @@ import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 import { environment } from '../environments/environment';
 import { BehaviorSubject, catchError, from, map, Observable, throwError } from 'rxjs';
+import { Token } from '@uniswap/sdk-core';
+import { TOKEN_DATA, TOKENS } from './../models/tokens';
+import { FeeAmount } from '@uniswap/v3-sdk';
+import { Pool, Route, computePoolAddress, SwapRouter, SwapQuoter } from '@uniswap/v3-sdk';
+
 
 declare global {
   interface Window {
@@ -19,6 +24,7 @@ export class EthereumService {
   public provider$ = this.providerSubject.asObservable();
   private accountSubject = new BehaviorSubject<string | null>(null);
   public account$ = this.accountSubject.asObservable();
+  private readonly POOL_FACTORY_CONTRACT_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
 
   private signer: ethers.Signer | null = null;
 
@@ -73,5 +79,14 @@ export class EthereumService {
   disconnectWallet(): void {
     this.accountSubject.next(null);
     this.signer = null;
+  }
+
+  async getUniswapPool(tokenInSymbol: string, tokenOutSymbol: string): Promise<any> {
+    return computePoolAddress({
+        factoryAddress: this.POOL_FACTORY_CONTRACT_ADDRESS,
+        tokenA: TOKENS[tokenInSymbol],
+        tokenB: TOKENS[tokenOutSymbol],
+        fee: FeeAmount.MEDIUM,
+      })
   }
 }

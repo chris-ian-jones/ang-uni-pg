@@ -23,4 +23,7 @@
   <p>Action: {{parsedInstruction.action}}</p>
   <p>Amount: {{parsedInstruction.amount}} {{parsedInstruction.token}}</p>
   <p>Using: {{parsedInstruction.using}}</p>
+
+  <button (click)="getUniswapPool()" [disabled]="isLoading">Get Uniswap Pool</button>
+  <p *ngIf="poolAddress">Pool Address: {{poolAddress}}</p>
 </div>

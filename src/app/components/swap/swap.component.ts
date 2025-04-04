@@ -23,6 +23,7 @@ export class SwapComponent implements OnInit, OnDestroy {
   tokenInSymbol: any = null;
   tokenOutSymbol: any = null;
   amountIn: any = null;
+  poolAddress: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -105,6 +106,20 @@ export class SwapComponent implements OnInit, OnDestroy {
 
   onExample() {
     this.swapForm.get('instruction')?.setValue('Buy 5 USDC using WETH');
+  }
+
+  async getUniswapPool() {
+    try {
+      this.isLoading = true;
+      this.error = null;
+      this.poolAddress = await this.ethereumService.getUniswapPool(this.tokenInSymbol, this.tokenOutSymbol);
+      console.log('Pool address:', this.poolAddress);
+    } catch (error: any) {
+      console.error('Error getting pool:', error);
+      this.error = error.message || 'Failed to get pool address';
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   ngOnDestroy() {
