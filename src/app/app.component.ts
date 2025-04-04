@@ -6,7 +6,7 @@ import { SwapComponent } from './components/swap/swap.component';
   standalone: true,
   imports: [RouterOutlet, SwapComponent],
   templateUrl: './app.component.html',
-  styleUrl: './app.component.scss'
+  styleUrl: './app.component.scss',
 })
 export class AppComponent {
   title = 'Uniswap Natural Language UI';

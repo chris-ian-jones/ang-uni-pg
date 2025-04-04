@@ -3,10 +3,12 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "kill-port 4200 && ng serve",
+    "start": "kill-port 4200 && npm run format && ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "format": "npx prettier --write ."
   },
   "private": true,
   "dependencies": {
@@ -30,13 +32,19 @@
     "@angular-devkit/build-angular": "^18.2.3",
     "@angular/cli": "^18.2.3",
     "@angular/compiler-cli": "^18.2.0",
+    "@eslint/js": "^9.23.0",
     "@types/jasmine": "~5.1.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
+    "eslint": "^9.23.0",
+    "eslint-config-prettier": "^10.1.1",
     "jasmine-core": "~5.2.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.2.0",
     "karma-coverage": "~2.2.0",
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
+    "prettier": "^3.5.3",
     "typescript": "~5.5.2"
   }
 }
