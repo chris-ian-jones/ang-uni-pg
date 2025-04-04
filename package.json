@@ -20,12 +20,14 @@
     "@angular/platform-browser": "^18.2.0",
     "@angular/platform-browser-dynamic": "^18.2.0",
     "@angular/router": "^18.2.0",
+    "@huggingface/inference": "^3.6.2",
     "@uniswap/sdk-core": "^7.7.2",
     "@uniswap/v3-sdk": "^3.25.2",
     "ethers": "^5.8.0",
     "kill-port": "^2.0.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
+    "zod": "^3.24.2",
     "zone.js": "~0.14.10"
   },
   "devDependencies": {

@@ -7,3 +7,20 @@
     <button (click)="connectWallet()">Connect Wallet</button>
   </ng-template>
 </div>
+
+<form [formGroup]="swapForm">
+  <div>
+    <input type="text" formControlName="instruction" placeholder="Enter your swap instruction" />
+    <button type="button" (click)="onExample()">Example</button>
+  </div>
+  <button type="button" (click)="onParse()" [disabled]="swapForm.invalid || isLoading">
+    Parse
+  </button>
+</form>
+
+<div *ngIf="parsedInstruction">
+  <h3>Parsed Trade Details:</h3>
+  <p>Action: {{parsedInstruction.action}}</p>
+  <p>Amount: {{parsedInstruction.amount}} {{parsedInstruction.token}}</p>
+  <p>Using: {{parsedInstruction.using}}</p>
+</div>
