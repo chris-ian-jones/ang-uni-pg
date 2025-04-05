@@ -2,13 +2,12 @@ import { Injectable } from '@angular/core';
 import { ethers } from 'ethers';
 import { environment } from '../environments/environment';
 import { BehaviorSubject, catchError, from, map, Observable, throwError } from 'rxjs';
-import { Token } from '@uniswap/sdk-core';
-import { TOKEN_DATA, TOKENS } from './../models/tokens';
+import { TOKENS } from './../models/tokens';
 import { FeeAmount } from '@uniswap/v3-sdk';
-import { Pool, Route, computePoolAddress, SwapRouter, SwapQuoter } from '@uniswap/v3-sdk';
+import { computePoolAddress } from '@uniswap/v3-sdk';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import Quoter from '@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json';
-import { fromReadableAmount, toReadableAmount } from '../libs/conversion';
+import { fromReadableAmount } from '../libs/conversion';
 
 declare global {
   interface Window {
@@ -147,11 +146,6 @@ export class EthereumService {
       'fromReadableAmount(amountOut, TOKENS[tokenOutSymbol].decimals)',
       fromReadableAmount(amountOut, TOKENS[tokenOutSymbol].decimals)
     );
-
-    console.log('here')
-    console.log('this.token0', this.token0);
-    console.log('this.token1', this.token1);
-    
 
     const quotedAmountIn = await quoterContract.callStatic.quoteExactOutputSingle(
       this.token1, // tokenIn

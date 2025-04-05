@@ -6,7 +6,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { LlmService } from '../../services/llm.service';
 import { TOKENS } from '../../models/tokens';
 import { ethers } from 'ethers';
-import { toReadableAmount } from '../../libs/conversion';
+
 @Component({
   selector: 'app-swap',
   imports: [CommonModule, ReactiveFormsModule],
@@ -28,6 +28,7 @@ export class SwapComponent implements OnInit, OnDestroy {
   poolContract: any = null;
   quoterContract: any = null;
   quotedAmountIn: any = null;
+  formattedQuotedAmountIn: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -166,9 +167,10 @@ export class SwapComponent implements OnInit, OnDestroy {
       );
       console.log('this.quotedAmountIn: ', this.quotedAmountIn);
 
-      const formattedQuotedAmountIn = ethers.utils.formatUnits(this.quotedAmountIn, TOKENS[this.tokenInSymbol].decimals)
-      console.log('here formattedQuotedAmountIn: ', formattedQuotedAmountIn);
-      
+      this.formattedQuotedAmountIn = ethers.utils.formatUnits(
+        this.quotedAmountIn,
+        TOKENS[this.tokenInSymbol].decimals
+      );
     } catch (error: any) {
       console.error('Error getting quoted amount in:', error);
       this.error = error.message || 'Failed to get quoted amount in';

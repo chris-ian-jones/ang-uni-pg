@@ -36,6 +36,8 @@
   </ng-container>
   <ng-container *ngIf="quoterContract">
     <button (click)="getQuotedAmountIn()" [disabled]="isLoading">Get Quoter Amount In</button>
-    <p *ngIf="quotedAmountIn">Quoted Amount In: {{ quotedAmountIn }}</p>
+    <p *ngIf="quotedAmountIn">
+      Quoted Amount In: {{ formattedQuotedAmountIn }} {{ tokenInSymbol }}
+    </p>
   </ng-container>
 </div>
