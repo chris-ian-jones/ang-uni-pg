@@ -3,11 +3,11 @@ import { ethers } from 'ethers';
 import { environment } from '../environments/environment';
 import { BehaviorSubject, catchError, from, map, Observable, throwError } from 'rxjs';
 import { TOKENS } from './../models/tokens';
-import { FeeAmount } from '@uniswap/v3-sdk';
-import { computePoolAddress } from '@uniswap/v3-sdk';
+import { FeeAmount, Route, SwapQuoter, computePoolAddress, Pool } from '@uniswap/v3-sdk';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import Quoter from '@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json';
 import { fromReadableAmount } from '../libs/conversion';
+import { SUPPORTED_CHAINS, Token, CurrencyAmount, TradeType } from '@uniswap/sdk-core';
 
 declare global {
   interface Window {
@@ -27,10 +27,13 @@ export class EthereumService {
   public account$ = this.accountSubject.asObservable();
   private readonly POOL_FACTORY_CONTRACT_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
   private readonly QUOTER_CONTRACT_ADDRESS = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
+  private readonly QUOTER_V2_CONTRACT_ADDRESS = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
 
   private token0: any = null;
   private token1: any = null;
   private fee: any = null;
+  private liquidity: any = null;
+  private slot0: any = null;
 
   private signer: ethers.Signer | null = null;
 
@@ -119,7 +122,9 @@ export class EthereumService {
     console.log('fee', fee);
     this.fee = fee;
     console.log('liquidity', liquidity);
+    this.slot0 = slot0;
     console.log('slot0', slot0);
+    this.liquidity = liquidity;
 
     return poolContract;
   }
@@ -158,5 +163,75 @@ export class EthereumService {
     console.log('quotedAmountIn', quotedAmountIn);
 
     return quotedAmountIn;
+  }
+
+  async getSwapRoute(poolContract: any, tokenInSymbol: string, tokenOutSymbol: string) {
+    console.log('getSwapRoute poolContract', poolContract);
+
+    const token0 = TOKENS[tokenInSymbol];
+    const token1 = TOKENS[tokenOutSymbol];
+
+    const token0Address = await poolContract.token0();
+    const token1Address = await poolContract.token1();
+
+    const token0IsInput =
+      TOKENS[tokenInSymbol].address.toLowerCase() === token0Address.toLowerCase();
+
+    const pool = new Pool(
+      token0IsInput ? TOKENS[tokenInSymbol] : TOKENS[tokenOutSymbol],
+      token0IsInput ? TOKENS[tokenOutSymbol] : TOKENS[tokenInSymbol],
+      this.fee,
+      this.slot0[0].toString(), // sqrtPriceX96
+      this.liquidity.toString(),
+      this.slot0[1] // tick
+    );
+
+    const swapRoute = await new Route([pool], token0, token1);
+
+    return swapRoute;
+  }
+
+  async getInputQuote(swapRoute: any, amountOut: number, tokenOutSymbol: string) {
+    try {
+      const amountOutRaw = fromReadableAmount(
+        amountOut,
+        TOKENS[tokenOutSymbol].decimals
+      ).toString();
+      console.log('Amount Out Raw:', amountOutRaw);
+
+      const currencyAmount = CurrencyAmount.fromRawAmount(TOKENS[tokenOutSymbol], amountOutRaw);
+      console.log('Currency Amount:', currencyAmount.toExact());
+
+      const { calldata } = await SwapQuoter.quoteCallParameters(
+        swapRoute,
+        currencyAmount,
+        TradeType.EXACT_OUTPUT,
+        {
+          useQuoterV2: true,
+        }
+      );
+      console.log('Quoter Calldata:', calldata);
+
+      const quoteCallReturnData = await this.infuraProvider.call({
+        to: this.QUOTER_V2_CONTRACT_ADDRESS,
+        data: calldata
+      });
+
+      const decodedQuoteCallReturnData = ethers.utils.defaultAbiCoder.decode(
+        ['uint256'],
+        quoteCallReturnData
+      );
+
+      return decodedQuoteCallReturnData[0];
+    } catch (error) {
+      console.error('Detailed quote error:', {
+        route: swapRoute,
+        amountOut,
+        tokenOutSymbol,
+        error,
+      });
+
+      throw error;
+    }
   }
 }

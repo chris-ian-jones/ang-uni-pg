@@ -29,6 +29,8 @@ export class SwapComponent implements OnInit, OnDestroy {
   quoterContract: any = null;
   quotedAmountIn: any = null;
   formattedQuotedAmountIn: any = null;
+  swapRoute: any = null;
+  inputQuote: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -174,6 +176,38 @@ export class SwapComponent implements OnInit, OnDestroy {
     } catch (error: any) {
       console.error('Error getting quoted amount in:', error);
       this.error = error.message || 'Failed to get quoted amount in';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async getSwapRoute() {
+    try {
+      this.swapRoute = await this.ethereumService.getSwapRoute(
+        this.poolContract,
+        this.tokenInSymbol,
+        this.tokenOutSymbol
+      );
+      console.log('this.swapRoute: ', this.swapRoute);
+    } catch (error: any) {
+      console.error('Error getting swap route:', error);
+      this.error = error.message || 'Failed to get swap route';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async getInputQuote() {
+    try {
+      this.inputQuote = await this.ethereumService.getInputQuote(
+        this.swapRoute,
+        this.amountOut,
+        this.tokenOutSymbol
+      );
+      console.log('this.inputQuote: ', this.inputQuote);
+    } catch (error: any) {
+      console.error('Error getting output quote:', error);
+      this.error = error.message || 'Failed to get output quote';
     } finally {
       this.isLoading = false;
     }

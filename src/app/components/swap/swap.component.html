@@ -40,4 +40,8 @@
       Quoted Amount In: {{ formattedQuotedAmountIn }} {{ tokenInSymbol }}
     </p>
   </ng-container>
+  <ng-container *ngIf="quotedAmountIn">
+    <button (click)="getSwapRoute()" [disabled]="isLoading">Get Swap Route</button>
+    <button *ngIf="swapRoute" (click)="getInputQuote()">Get Input Quote</button>
+  </ng-container>
 </div>
