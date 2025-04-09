@@ -45,4 +45,8 @@
     <button *ngIf="swapRoute" (click)="getInputQuote()">Get Input Quote</button>
     <button *ngIf="inputQuote" (click)="createUncheckedTrade()">Create Unchecked Trade</button>
   </ng-container>
+  <ng-container *ngIf="uncheckedTrade">
+    <button (click)="getTokenApproval()">Get Token Approval</button>
+    <button *ngIf="uncheckedTrade" (click)="sendTransaction()">Send Transaction</button>
+  </ng-container>
 </div>

@@ -6,6 +6,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { LlmService } from '../../services/llm.service';
 import { TOKENS } from '../../models/tokens';
 import { ethers } from 'ethers';
+import { any } from 'zod';
 
 @Component({
   selector: 'app-swap',
@@ -32,6 +33,8 @@ export class SwapComponent implements OnInit, OnDestroy {
   swapRoute: any = null;
   inputQuote: any = null;
   uncheckedTrade: any = null;
+  tokenApproval: any = null;
+  sendTransactionReceipt: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -229,6 +232,31 @@ export class SwapComponent implements OnInit, OnDestroy {
       this.error = error.message || 'Failed to create unchecked trade';
     } finally {
       this.isLoading = false;
+    }
+  }
+
+  async getTokenApproval() {
+    try {
+      await this.ethereumService.getTokenApproval(this.tokenInSymbol);
+      console.log('this.tokenApproval: ', this.tokenApproval);
+    } catch (error: any) {
+      console.error('Error getting token approval:', error);
+    }
+    this.tokenApproval = true;
+  }
+
+  async sendTransaction() {
+    try {
+      const swapOptions = await this.ethereumService.getSwapOptions();
+      console.log('swapOptions', swapOptions);
+
+      this.sendTransactionReceipt = await this.ethereumService.sendTransaction(
+        this.uncheckedTrade,
+        swapOptions
+      );
+      console.log('this.sendTransactionReceipt: ', this.sendTransactionReceipt);
+    } catch (error: any) {
+      console.error('Error sending transaction:', error);
     }
   }
 

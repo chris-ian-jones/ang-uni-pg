@@ -1,13 +1,30 @@
 import { Injectable } from '@angular/core';
-import { ethers } from 'ethers';
+import { BigNumber, ethers } from 'ethers';
 import { environment } from '../environments/environment';
-import { BehaviorSubject, catchError, from, map, Observable, throwError } from 'rxjs';
+import {
+  BehaviorSubject,
+  catchError,
+  firstValueFrom,
+  from,
+  map,
+  Observable,
+  throwError,
+} from 'rxjs';
 import { TOKENS } from './../models/tokens';
-import { FeeAmount, Route, SwapQuoter, computePoolAddress, Pool, Trade } from '@uniswap/v3-sdk';
+import {
+  FeeAmount,
+  Route,
+  SwapQuoter,
+  computePoolAddress,
+  Pool,
+  Trade,
+  SwapOptions,
+  SwapRouter,
+} from '@uniswap/v3-sdk';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import Quoter from '@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json';
 import { fromReadableAmount } from '../libs/conversion';
-import { SUPPORTED_CHAINS, Token, CurrencyAmount, TradeType } from '@uniswap/sdk-core';
+import { SUPPORTED_CHAINS, Token, CurrencyAmount, TradeType, Percent } from '@uniswap/sdk-core';
 import JSBI from 'jsbi';
 
 declare global {
@@ -15,6 +32,28 @@ declare global {
     ethereum: any;
   }
 }
+
+enum TransactionState {
+  Failed = 'Failed',
+  New = 'New',
+  Rejected = 'Rejected',
+  Sending = 'Sending',
+  Sent = 'Sent',
+}
+
+const ERC20_ABI = [
+  // Read-Only Functions
+  'function balanceOf(address owner) view returns (uint256)',
+  'function decimals() view returns (uint8)',
+  'function symbol() view returns (string)',
+
+  // Authenticated Functions
+  'function transfer(address to, uint amount) returns (bool)',
+  'function approve(address _spender, uint256 _value) returns (bool)',
+
+  // Events
+  'event Transfer(address indexed from, address indexed to, uint amount)',
+];
 
 @Injectable({
   providedIn: 'root',
@@ -29,6 +68,10 @@ export class EthereumService {
   private readonly POOL_FACTORY_CONTRACT_ADDRESS = '0x1F98431c8aD98523631AE4a59f267346ea31F984';
   private readonly QUOTER_CONTRACT_ADDRESS = '0xb27308f9F90D607463bb33eA1BeBb41C27CE5AB6';
   private readonly QUOTER_V2_CONTRACT_ADDRESS = '0x61fFE014bA17989E743c5F6cB21bF9697530B21e';
+  private readonly SWAP_ROUTER_ADDRESS = '0xE592427A0AEce92De3Edee1F18E0157C05861564';
+  private readonly TOKEN_AMOUNT_TO_APPROVE_FOR_TRANSFER = 2000;
+  private readonly MAX_FEE_PER_GAS = 100000000000;
+  private readonly MAX_PRIORITY_FEE_PER_GAS = 100000000000;
 
   private token0: any = null;
   private token1: any = null;
@@ -259,6 +302,118 @@ export class EthereumService {
       return uncheckedTrade;
     } catch (error) {
       console.error('Error creating unchecked trade:', error);
+      throw error;
+    }
+  }
+
+  async getTokenApproval(tokenInSymbol: any) {
+    try {
+      const address = await firstValueFrom(this.account$);
+      console.log('address', address);
+
+      if (!this.provider || !address) {
+        console.log('No Provider Found');
+        return TransactionState.Failed;
+      }
+
+      try {
+        const tokenContract = new ethers.Contract(
+          TOKENS[tokenInSymbol].address,
+          ERC20_ABI,
+          this.provider
+        );
+
+        const transaction = await tokenContract.populateTransaction['approve'](
+          this.SWAP_ROUTER_ADDRESS,
+          fromReadableAmount(
+            this.TOKEN_AMOUNT_TO_APPROVE_FOR_TRANSFER,
+            TOKENS[tokenInSymbol].decimals
+          ).toString()
+        );
+
+        return this.sendTransactionViaWallet({
+          ...transaction,
+          from: address,
+        });
+      } catch (e) {
+        console.error(e);
+        return TransactionState.Failed;
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting token approval:', error);
+      throw error;
+    }
+  }
+
+  async sendTransactionViaWallet(transaction: any) {
+    if (transaction.value) {
+      transaction.value = BigNumber.from(transaction.value);
+    }
+    const txRes = await this.signer?.sendTransaction(transaction);
+
+    let receipt = null;
+    const provider = this.provider;
+    if (!provider) {
+      return TransactionState.Failed;
+    }
+
+    while (receipt === null) {
+      try {
+        receipt = await provider.getTransactionReceipt(txRes?.hash || '');
+
+        if (receipt === null) {
+          continue;
+        }
+      } catch (e) {
+        console.log(`Receipt error:`, e);
+        break;
+      }
+    }
+
+    // Transaction was successful if status === 1
+    if (receipt) {
+      return TransactionState.Sent;
+    } else {
+      return TransactionState.Failed;
+    }
+  }
+
+  async getSwapOptions() {
+    const address = await firstValueFrom(this.account$);
+
+    return {
+      slippageTolerance: new Percent(50, 10_000), // 50 bips, or 0.50%
+      deadline: Math.floor(Date.now() / 1000) + 60 * 20, // 20 minutes from the current Unix time
+      recipient: address,
+    };
+  }
+
+  async sendTransaction(uncheckedTrade: any, swapOptions: any) {
+    const address = await firstValueFrom(this.account$);
+    console.log('address', address);
+    const methodParameters = await SwapRouter.swapCallParameters([uncheckedTrade], swapOptions);
+    console.log('methodParameters', methodParameters);
+
+    const tx = {
+      data: methodParameters.calldata,
+      to: this.SWAP_ROUTER_ADDRESS,
+      value: methodParameters.value,
+      from: address,
+      gasLimit: 300000,
+      maxFeePerGas: this.MAX_FEE_PER_GAS,
+      maxPriorityFeePerGas: this.MAX_PRIORITY_FEE_PER_GAS,
+    };
+
+    console.log('tx', tx);
+
+    try {
+      const res = await this.signer?.sendTransaction(tx as any);
+      console.log('res', res);
+    //   return res;
+    return null
+    } catch (error) {
+      console.error('Error sending transaction:', error);
       throw error;
     }
   }
