@@ -3,11 +3,12 @@ import { ethers } from 'ethers';
 import { environment } from '../environments/environment';
 import { BehaviorSubject, catchError, from, map, Observable, throwError } from 'rxjs';
 import { TOKENS } from './../models/tokens';
-import { FeeAmount, Route, SwapQuoter, computePoolAddress, Pool } from '@uniswap/v3-sdk';
+import { FeeAmount, Route, SwapQuoter, computePoolAddress, Pool, Trade } from '@uniswap/v3-sdk';
 import IUniswapV3PoolABI from '@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json';
 import Quoter from '@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json';
 import { fromReadableAmount } from '../libs/conversion';
 import { SUPPORTED_CHAINS, Token, CurrencyAmount, TradeType } from '@uniswap/sdk-core';
+import JSBI from 'jsbi';
 
 declare global {
   interface Window {
@@ -214,7 +215,7 @@ export class EthereumService {
 
       const quoteCallReturnData = await this.infuraProvider.call({
         to: this.QUOTER_V2_CONTRACT_ADDRESS,
-        data: calldata
+        data: calldata,
       });
 
       const decodedQuoteCallReturnData = ethers.utils.defaultAbiCoder.decode(
@@ -231,6 +232,33 @@ export class EthereumService {
         error,
       });
 
+      throw error;
+    }
+  }
+
+  async createUncheckedTrade(
+    swapRoute: any,
+    amountOut: number,
+    tokenOutSymbol: string,
+    tokenInSymbol: string,
+    inputQuote: any
+  ) {
+    try {
+      const amountOutRaw = fromReadableAmount(
+        amountOut,
+        TOKENS[tokenOutSymbol].decimals
+      ).toString();
+      const currencyAmount = CurrencyAmount.fromRawAmount(TOKENS[tokenOutSymbol], amountOutRaw);
+
+      const uncheckedTrade = Trade.createUncheckedTrade({
+        route: swapRoute,
+        inputAmount: CurrencyAmount.fromRawAmount(TOKENS[tokenInSymbol], JSBI.BigInt(inputQuote)),
+        outputAmount: currencyAmount,
+        tradeType: TradeType.EXACT_OUTPUT,
+      });
+      return uncheckedTrade;
+    } catch (error) {
+      console.error('Error creating unchecked trade:', error);
       throw error;
     }
   }

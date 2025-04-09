@@ -31,6 +31,7 @@ export class SwapComponent implements OnInit, OnDestroy {
   formattedQuotedAmountIn: any = null;
   swapRoute: any = null;
   inputQuote: any = null;
+  uncheckedTrade: any = null;
 
   constructor(
     private fb: FormBuilder,
@@ -208,6 +209,24 @@ export class SwapComponent implements OnInit, OnDestroy {
     } catch (error: any) {
       console.error('Error getting output quote:', error);
       this.error = error.message || 'Failed to get output quote';
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  async createUncheckedTrade() {
+    try {
+      this.uncheckedTrade = await this.ethereumService.createUncheckedTrade(
+        this.swapRoute,
+        this.amountOut,
+        this.tokenOutSymbol,
+        this.tokenInSymbol,
+        this.inputQuote
+      );
+      console.log('this.uncheckedTrade: ', this.uncheckedTrade);
+    } catch (error: any) {
+      console.error('Error creating unchecked trade:', error);
+      this.error = error.message || 'Failed to create unchecked trade';
     } finally {
       this.isLoading = false;
     }

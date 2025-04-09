@@ -43,5 +43,6 @@
   <ng-container *ngIf="quotedAmountIn">
     <button (click)="getSwapRoute()" [disabled]="isLoading">Get Swap Route</button>
     <button *ngIf="swapRoute" (click)="getInputQuote()">Get Input Quote</button>
+    <button *ngIf="inputQuote" (click)="createUncheckedTrade()">Create Unchecked Trade</button>
   </ng-container>
 </div>
